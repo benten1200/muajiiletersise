@@ -1,0 +1,1458 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Tetori i Letërsisë</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap">
+<style>
+/* Layout: one full-bleed 3D stage (the open book + a ring of statues); DOM chrome floats on top:
+   masthead top-left, roster of names along the bottom, reading panel right (desktop) or bottom sheet (phone),
+   and a two-page HTML book of literary history that opens over the scene. */
+:root{
+  --ink:#140d0f;
+  --ink-2:#1d1316;
+  --oxblood:#6b1f26;
+  --gold:#d8ab52;
+  --gold-soft:#a98448;
+  --parch:#f0e4ca;
+  --fg:#f3e9d6;
+  --muted:#b8a68b;
+  --line:rgba(216,171,82,.28);
+  --glass:rgba(20,13,15,.74);
+  --page:#efe2c4;
+  --page-ink:#2a1a12;
+  --page-muted:#7a5a3a;
+  --page-rule:rgba(107,31,38,.25);
+  --display:"IM Fell English","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  --body:"Alegreya Sans","Segoe UI",system-ui,sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--ink);color:var(--fg);font-family:var(--body);font-size:16px;overflow:hidden;-webkit-font-smoothing:antialiased}
+#stage{position:fixed;inset:0;display:block;width:100%;height:100%;touch-action:none;cursor:grab;outline:none}
+#stage.pointer{cursor:pointer}
+#stage.dragging{cursor:grabbing}
+button{font:inherit;color:inherit}
+button:disabled{opacity:.35;cursor:default}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+/* ---------- intro ---------- */
+#intro{position:fixed;left:0;right:0;bottom:0;z-index:10;display:grid;justify-items:center;text-align:center;gap:14px;
+  padding-block:90px calc(env(safe-area-inset-bottom,0px) + 40px);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  background:linear-gradient(to top,var(--ink) 30%,rgba(20,13,15,0));transition:opacity .7s ease,transform .7s ease;pointer-events:none}
+#intro button{pointer-events:auto}
+#intro.gone{opacity:0;transform:translateY(24px)}
+#intro.gone button{pointer-events:none}
+.eyebrow{margin:0;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
+#intro h1{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(34px,6vw,64px);line-height:1.02;text-wrap:balance}
+#intro h1 em{color:var(--gold)}
+#intro p.lede{margin:0;max-width:46ch;color:var(--muted);font-size:17px;line-height:1.5;text-wrap:balance}
+.btn-gold{border:0;background:var(--gold);color:var(--ink);font-family:var(--display);font-size:20px;padding:11px 26px 12px;border-radius:2px;cursor:pointer;
+  box-shadow:0 0 0 1px var(--gold),0 0 0 5px rgba(216,171,82,.18);transition:transform .2s ease,box-shadow .2s ease}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 0 0 1px var(--gold),0 0 0 8px rgba(216,171,82,.22)}
+#openBtn{margin-top:6px;font-size:21px;padding:12px 30px 13px}
+.small-note{font-size:13px;color:var(--muted)}
+.credit{margin-top:-6px;font-family:var(--display);font-style:italic;font-size:14px;color:var(--gold-soft);letter-spacing:.02em}
+
+/* ---------- masthead & controls ---------- */
+#masthead{position:fixed;top:0;left:0;z-index:8;display:grid;gap:4px;
+  padding-block:calc(env(safe-area-inset-top,0px) + 20px) 0;padding-left:max(22px,env(safe-area-inset-left,0px));padding-right:16px;pointer-events:none}
+#masthead h1{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(24px,3vw,34px);line-height:1.05}
+#masthead h1 em{color:var(--gold)}
+#topActions{position:fixed;top:calc(env(safe-area-inset-top,0px) + 18px);right:max(18px,env(safe-area-inset-right,0px));z-index:9;display:flex;gap:8px}
+.btn-ghost{background:var(--glass);border:1px solid var(--line);color:var(--fg);padding:8px 14px;border-radius:999px;font-size:14px;cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.btn-ghost:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+.short{display:none}
+#skipBtn{position:fixed;right:max(18px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 18px);z-index:9}
+
+#hint{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 86px);z-index:7;text-align:center;font-size:14px;color:var(--muted);pointer-events:none;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* ---------- roster ---------- */
+#roster{position:fixed;left:0;right:0;bottom:0;z-index:7;padding-bottom:env(safe-area-inset-bottom,0px);
+  background:linear-gradient(to top,rgba(20,13,15,.92),rgba(20,13,15,0))}
+#rosterScroll{display:flex;gap:8px;overflow-x:auto;padding-block:14px 16px;scrollbar-width:none;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+#rosterScroll::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;display:grid;gap:1px;text-align:left;background:var(--glass);border:1px solid var(--line);border-radius:3px;padding:7px 13px 8px;cursor:pointer;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:border-color .2s,background .2s,color .2s}
+.chip b{font-family:var(--display);font-weight:400;font-size:17px;line-height:1.1;white-space:nowrap}
+.chip span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.chip:hover{border-color:var(--gold)}
+.chip[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:var(--ink)}
+.chip[aria-pressed="true"] span{color:var(--oxblood)}
+.chip.lit{border-style:dashed}
+.chip.lit b{color:var(--gold)}
+
+/* ---------- reading panel ---------- */
+#panel{position:fixed;top:0;right:0;bottom:0;z-index:20;width:min(440px,100%);overflow-y:auto;overscroll-behavior:contain;
+  background:linear-gradient(180deg,var(--ink-2),var(--ink));border-left:1px solid var(--line);
+  padding-block:calc(env(safe-area-inset-top,0px) + 30px) calc(env(safe-area-inset-bottom,0px) + 28px);
+  padding-left:30px;padding-right:max(30px,env(safe-area-inset-right,0px));
+  transform:translateX(102%);transition:transform .55s cubic-bezier(.2,.8,.2,1);box-shadow:-30px 0 60px rgba(0,0,0,.45)}
+#panel.open{transform:none}
+#closeBtn{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);right:max(16px,env(safe-area-inset-right,0px));width:38px;height:38px;border-radius:50%;
+  background:transparent;border:1px solid var(--line);font-size:22px;line-height:1;cursor:pointer;color:var(--muted)}
+#closeBtn:hover{color:var(--gold);border-color:var(--gold)}
+#panel .eyebrow{padding-right:44px}
+#panel h2{margin:10px 0 0;font-family:var(--display);font-weight:400;font-size:clamp(32px,4vw,42px);line-height:1.02;text-wrap:balance}
+.life{margin:8px 0 0;color:var(--muted);font-size:15px;font-variant-numeric:tabular-nums}
+.epithet{margin:14px 0 0;font-family:var(--display);font-style:italic;font-size:21px;line-height:1.3;color:var(--gold)}
+#panel h3{margin:28px 0 10px;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-soft)}
+#pAbout p{margin:0 0 12px;font-size:16.5px;line-height:1.62;max-width:60ch}
+#pQuote{margin:22px 0 0;font-family:var(--display);font-style:italic;font-size:22px;line-height:1.35;color:var(--parch)}
+#pQuote small{display:block;margin-top:6px;font-family:var(--body);font-style:normal;font-size:13px;color:var(--muted)}
+.works{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.works li{display:grid;grid-template-columns:92px 1fr;gap:12px;padding:9px 0;border-top:1px solid var(--line);align-items:baseline}
+.works li:last-child{border-bottom:1px solid var(--line)}
+.works .yr{font-variant-numeric:tabular-nums;color:var(--gold);font-size:14px}
+.works .tt{font-family:var(--display);font-size:18px;line-height:1.25;min-width:0}
+.works .tt small{font-family:var(--body);font-size:13px;color:var(--muted)}
+.fact{margin-top:26px;padding-top:4px}
+.fact p{margin:0;font-size:16px;line-height:1.6;color:var(--parch)}
+.pnav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:30px}
+.pnav .count{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+#endBox{margin-top:22px;padding:18px;border:1px solid var(--gold-soft);border-radius:4px;background:rgba(216,171,82,.06);display:grid;gap:12px}
+#endBox h4{margin:0;font-family:var(--display);font-weight:400;font-size:24px;color:var(--gold)}
+#endBox p{margin:0;font-size:15px;line-height:1.55;color:var(--parch)}
+#endBox .row{display:flex;flex-wrap:wrap;gap:10px}
+
+/* ---------- literature book ---------- */
+#litBook{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:rgba(12,8,9,.66);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+  padding-block:calc(env(safe-area-inset-top,0px) + 18px) calc(env(safe-area-inset-bottom,0px) + 18px);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));overflow-y:auto}
+.lb-wrap{display:grid;gap:16px;justify-items:center;width:min(1080px,100%);animation:lbIn .7s cubic-bezier(.2,.8,.2,1)}
+@keyframes lbIn{from{opacity:0;transform:translateY(30px) scale(.96)}to{opacity:1;transform:none}}
+.lb-head{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%}
+.lb-head h2{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(22px,2.6vw,30px)}
+.lb-head h2 em{color:var(--gold)}
+.lb-book{position:relative;display:grid;grid-template-columns:1fr 1fr;width:100%;height:min(70vh,640px);perspective:2400px}
+.lb-book::before{content:"";position:absolute;inset:-12px -14px -14px;background:var(--oxblood);border-radius:6px;
+  box-shadow:inset 0 0 0 2px rgba(216,171,82,.55),inset 0 0 0 7px var(--oxblood),inset 0 0 0 8px rgba(216,171,82,.3),0 40px 60px rgba(0,0,0,.6)}
+.lb-page,.lb-face{position:relative;color:var(--page-ink);overflow:hidden;min-width:0}
+.skin-l{background:linear-gradient(to left,rgba(90,55,25,.32),rgba(90,55,25,0) 9%),radial-gradient(ellipse at 50% 45%,rgba(255,248,230,0) 55%,rgba(150,105,55,.22)),var(--page);border-radius:3px 0 0 3px}
+.skin-r{background:linear-gradient(to right,rgba(90,55,25,.32),rgba(90,55,25,0) 9%),radial-gradient(ellipse at 50% 45%,rgba(255,248,230,0) 55%,rgba(150,105,55,.22)),var(--page);border-radius:0 3px 3px 0}
+.lb-inner{height:100%;overflow-y:auto;padding:38px 46px 52px;scrollbar-width:thin;scrollbar-color:rgba(107,31,38,.35) transparent}
+.lb-folio{position:absolute;bottom:14px;left:0;right:0;text-align:center;font-family:var(--display);color:var(--page-muted);font-size:15px;pointer-events:none}
+.lb-leaf{position:absolute;top:0;bottom:0;width:50%;transform-style:preserve-3d;z-index:5}
+.lb-leaf.fwd{left:50%;transform-origin:left center}
+.lb-leaf.bwd{left:0;transform-origin:right center}
+.lb-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;box-shadow:0 0 30px rgba(0,0,0,.18)}
+.lb-face.b{transform:rotateY(180deg)}
+.lb-nav{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
+.lb-nav .count{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:120px;text-align:center}
+
+.lb-inner .lb-eyebrow{margin:0 0 8px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--oxblood);font-weight:700}
+.lb-inner h2{margin:0;font-family:var(--display);font-weight:400;color:var(--oxblood);font-size:clamp(44px,5.4vw,66px);line-height:.98;text-wrap:balance}
+.lb-inner h3{margin:0 0 10px;font-family:var(--display);font-weight:400;font-size:29px;line-height:1.08;text-wrap:balance}
+.lb-inner h4{margin:18px 0 6px;font-family:var(--display);font-weight:400;font-style:italic;font-size:21px;color:var(--oxblood)}
+.lb-inner p{margin:0 0 11px;font-size:15.5px;line-height:1.56;max-width:62ch}
+.lb-inner p.sub{font-family:var(--display);font-style:italic;font-size:21px;line-height:1.3;color:var(--page-muted)}
+.lb-inner .dropcap::first-letter{float:left;font-family:var(--display);font-size:62px;line-height:.8;padding:6px 8px 0 0;color:var(--oxblood)}
+.lb-inner .note{font-family:var(--display);font-style:italic;color:var(--oxblood);font-size:17px}
+.lb-orn{display:flex;align-items:center;gap:10px;margin:18px 0;color:var(--oxblood)}
+.lb-orn::before,.lb-orn::after{content:"";flex:1;height:1px;background:var(--page-rule)}
+.lb-orn span{width:9px;height:9px;transform:rotate(45deg);background:currentColor}
+.lb-list{list-style:none;padding:0;margin:6px 0 14px;display:grid;gap:9px}
+.lb-list li{display:grid;grid-template-columns:54px 1fr;gap:12px;font-size:15px;line-height:1.45;align-items:baseline}
+.lb-list .y{font-family:var(--display);color:var(--oxblood);font-size:18px;font-variant-numeric:tabular-nums}
+.lb-list.dots li{grid-template-columns:12px 1fr}
+.lb-list.dots .y{width:7px;height:7px;background:var(--oxblood);transform:rotate(45deg) translateY(-2px)}
+.lb-inner em{font-style:italic}
+.lb-inner b{font-weight:700}
+
+#fallback{position:fixed;inset:0;display:grid;place-items:center;text-align:center;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));color:var(--muted)}
+
+@media (max-width:759px){
+  #panel{top:auto;left:0;width:auto;max-height:64%;border-left:0;border-top:1px solid var(--line);border-radius:16px 16px 0 0;
+    padding-block:26px calc(env(safe-area-inset-bottom,0px) + 24px);
+    padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));
+    transform:translateY(104%);box-shadow:0 -20px 50px rgba(0,0,0,.5)}
+  #closeBtn{top:14px}
+  #hint{bottom:calc(env(safe-area-inset-bottom,0px) + 80px);font-size:13px}
+  #masthead .eyebrow{display:none}
+  #masthead h1{font-size:22px;max-width:9em}
+  #topActions .btn-ghost{padding:7px 12px;font-size:13px}
+  .long{display:none}
+  .short{display:inline}
+  .lb-book{grid-template-columns:1fr;height:min(70vh,620px)}
+  .lb-book .lb-left{display:none}
+  .skin-r{border-radius:3px}
+  .lb-inner{padding:28px 24px 48px}
+  .lb-head h2{font-size:20px}
+}
+@media (prefers-reduced-motion:reduce){
+  #panel,#intro{transition:none}
+  .lb-wrap{animation:none}
+}
+</style>
+
+<canvas id="stage" aria-label="Skenë 3D: një libër i hapur dhe statujat e figurave të letërsisë shqiptare" tabindex="0"></canvas>
+
+<section id="intro">
+  <p class="eyebrow">Lënda: Letërsia · Tetor</p>
+  <h1>Tetori, <em>muaji i letërsisë</em></h1>
+  <p class="lede">Hape librin dhe takoni nëntë autorë që i dhanë shqipes letërsinë e saj, nga Jeronim De Rada te Ismail Kadare.</p>
+  <button id="openBtn" class="btn-gold">Hape librin</button>
+  <span class="small-note">ose kliko mbi libër</span>
+  <span class="small-note credit">Punoi: Dion Durma</span>
+</section>
+
+<header id="masthead" hidden>
+  <p class="eyebrow">Lënda: Letërsia · Tetor</p>
+  <h1>Tetori, <em>muaji i letërsisë</em></h1>
+</header>
+<div id="topActions" hidden>
+  <button id="litTopBtn" class="btn-ghost"><span class="long">Historia e letërsisë</span><span class="short">Historia</span></button>
+  <button id="closeTopBtn" class="btn-ghost"><span class="long">Mbyll librin</span><span class="short">Mbyll</span></button>
+</div>
+<button id="skipBtn" class="btn-ghost" hidden>Kalo animacionin »</button>
+<p id="hint" hidden>Tërhiq për të rrotulluar · Kliko një statujë për ta njohur</p>
+
+<nav id="roster" aria-label="Figurat e letërsisë" hidden>
+  <div id="rosterScroll"></div>
+</nav>
+
+<aside id="panel" aria-labelledby="pName" inert>
+  <button id="closeBtn" aria-label="Mbyll panelin">×</button>
+  <p class="eyebrow" id="pEra"></p>
+  <h2 id="pName"></h2>
+  <p class="life" id="pLife"></p>
+  <p class="epithet" id="pEpithet"></p>
+  <p id="pQuote" hidden></p>
+  <h3>Çfarë bëri për letërsinë shqipe</h3>
+  <div id="pAbout"></div>
+  <h3>Veprat kryesore</h3>
+  <ul class="works" id="pWorks"></ul>
+  <div class="fact">
+    <h3>A e dije?</h3>
+    <p id="pFact"></p>
+  </div>
+  <div id="endBox" hidden>
+    <h4>I njohe të nëntë autorët</h4>
+    <p>Shfleto librin për historinë e plotë të letërsisë shqipe, nga këngët e kreshnikëve te sot, ose mbylle librin.</p>
+    <div class="row">
+      <button class="btn-gold" id="endLitBtn">Shfleto librin</button>
+      <button class="btn-ghost" id="endCloseBtn">Mbyll librin</button>
+    </div>
+  </div>
+  <div class="pnav">
+    <button class="btn-ghost" id="prevBtn">← Më parë</button>
+    <span class="count" id="pCount"></span>
+    <button class="btn-ghost" id="nextBtn">Tjetri →</button>
+  </div>
+</aside>
+
+<section id="litBook" hidden aria-label="Historia e letërsisë shqipe">
+  <div class="lb-wrap">
+    <div class="lb-head">
+      <h2>Libri i <em>letërsisë shqipe</em></h2>
+      <button class="btn-ghost" id="lbBackBtn">← Te autorët</button>
+    </div>
+    <div class="lb-book" id="lbBook">
+      <article class="lb-page lb-left skin-l" id="lbLeft"></article>
+      <article class="lb-page lb-right skin-r" id="lbRight"></article>
+    </div>
+    <div class="lb-nav">
+      <button class="btn-ghost" id="lbPrev">← Shfleto prapa</button>
+      <span class="count" id="lbCount"></span>
+      <button class="btn-ghost" id="lbNext">Shfleto →</button>
+      <button class="btn-gold" id="lbClose">Mbyll librin</button>
+    </div>
+  </div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+"use strict";
+/* ================= DATA ================= */
+const FIGS = [
+  {
+    name:"Jeronim De Rada", years:"1814 – 1903", place:"Maqi (Macchia Albanese), Kalabri",
+    era:"Letërsia arbëreshe · Romantizmi", epithet:"Kryetari i romantizmit shqiptar",
+    about:[
+      "Poet arbëresh nga Italia e jugut, De Rada botoi më 1836 «Këngët e Milosaos», veprën e parë të madhe poetike të shqipes së kohës së re. Me të, romantizmi europian hyri në letërsinë shqipe.",
+      "Gjithë jetën e kaloi duke mbrojtur gjuhën dhe identitetin shqiptar: themeloi gazetën «Fiamuri Arbërit» (1883) dhe organizoi më 1895 kongresin e parë gjuhësor shqiptar, në Koriliano të Kalabrisë."
+    ],
+    works:[["1836","Këngët e Milosaos"],["1839","Serafina Topia"],["1872–1884","Skanderbeku i pafat"],["1883","Fiamuri Arbërit","gazetë"]],
+    fact:"Ai lindi e jetoi në Itali, por shkroi në të folmen arbëreshe që komuniteti i tij e kishte ruajtur që nga shekulli XV, kur arbëreshët u shpërngulën pas vdekjes së Skënderbeut.",
+    look:{tone:"marble",hair:"side",beard:"full",mustache:"small",dress:"coat"}
+  },
+  {
+    name:"Naim Frashëri", years:"1846 – 1900", place:"Frashër, Përmet",
+    era:"Rilindja Kombëtare", epithet:"Poeti kombëtar i Shqipërisë",
+    quote:["O malet’ e Shqipërisë e ju o lisat’ e gjatë!","Vargu i parë i «Bagëti e Bujqësi»"],
+    about:[
+      "Naimi është zëri më i fortë poetik i Rilindjes Kombëtare. Në «Bagëti e Bujqësi» (1886) i këndoi bukurisë së vendit dhe jetës së fshatarit, duke e bërë dashurinë për atdheun temë qendrore të poezisë shqipe.",
+      "Në Stamboll punoi për shoqërinë që botonte libra shqip dhe shkroi tekste për shkollat e para shqipe. Me «Istori e Skënderbeut» (1898) i dha popullit një epope kombëtare."
+    ],
+    works:[["1886","Bagëti e Bujqësi"],["1890","Lulet e verës"],["1898","Istori e Skënderbeut"],["1898","Qerbelaja"]],
+    fact:"Naimi shkroi edhe në turqisht, persisht e greqisht, por zgjodhi shqipen për veprat që donte t’i lexonte i gjithë populli.",
+    look:{tone:"marble",hat:"fez",mustache:"small",dress:"stambolli"}
+  },
+  {
+    name:"Andon Zako Çajupi", years:"1866 – 1930", place:"Sheper, Zagori",
+    era:"Rilindja Kombëtare", epithet:"Poeti i satirës dhe i vendlindjes",
+    about:[
+      "Çajupi jetoi në Egjipt, ku ishte ndër figurat kryesore të kolonisë shqiptare. Libri i tij «Baba-Tomorri» (1902) bashkoi lirikën për atdheun me satirën e mprehtë ndaj padrejtësive shoqërore.",
+      "Me komedinë «Katërmbëdhjetë vjeç dhëndër» hodhi themelet e dramaturgjisë shqipe, ndërsa me përkthimin e fabulave të La Fontenit tregoi se shqipja mund t’i mbajë edhe klasikët europianë."
+    ],
+    works:[["1902","Baba-Tomorri"],["—","Katërmbëdhjetë vjeç dhëndër","komedi"],["—","Pas vdekjes","dramë"],["—","Përrallat e La Fontenit","përkthim"]],
+    fact:"Emri «Çajupi» vjen nga mali i Çajupit, pranë fshatit të tij të lindjes në Zagori.",
+    look:{tone:"bronze",hair:"full",mustache:"big",dress:"suit"}
+  },
+  {
+    name:"Gjergj Fishta", years:"1871 – 1940", place:"Fishtë, Zadrimë",
+    era:"Rilindja dhe Pavarësia", epithet:"«Homeri shqiptar»",
+    about:[
+      "Prift françeskan nga Shkodra, Fishta shkroi «Lahuta e Malcís», poemën epike kombëtare me 30 këngë, ku luftërat e malësorëve për liri ngrihen në lartësinë e eposit klasik.",
+      "Më 1908 kryesoi komisionin e Kongresit të Manastirit që caktoi alfabetin e sotëm të shqipes. Themeloi revistën «Hylli i Dritës» dhe shkroi satira të mprehta si «Anzat e Parnasit»."
+    ],
+    works:[["1907","Anzat e Parnasit","satirë"],["1913","Hylli i Dritës","revistë"],["1937","Lahuta e Malcís","botimi i plotë"]],
+    fact:"«Lahuta e Malcís» ka mbi 15 000 vargje, të shkruara në gegërishten e veriut me ritmin e këngëve që këndoheshin me lahutë.",
+    look:{tone:"bronze",hat:"hood",mustache:"small",dress:"habit"}
+  },
+  {
+    name:"Fan S. Noli", years:"1882 – 1965", place:"Ibrik Tepe (Qytezë), Trakia Lindore",
+    era:"Pavarësia dhe mërgata", epithet:"Përkthyesi i madh dhe poeti i mërgimit",
+    about:[
+      "Noli e pasuroi shqipen duke sjellë kryeveprat botërore: Shekspirin («Otello», «Hamleti», «Makbethi», «Jul Qezari»), Servantesin («Don Kishoti»), Ibsenin dhe «Rubairat» e Omar Khajamit.",
+      "Ishte peshkop, historian, muzikant dhe politikan. Vëllimi poetik «Album» dhe «Historia e Skënderbeut» (1921) mbeten ndër veprat më të çmuara të shqipes së shekullit XX."
+    ],
+    works:[["1921","Historia e Skënderbeut"],["1948","Album","poezi"],["—","Rubairat e Omar Khajamit","përkthim"],["—","Don Kishoti i Mançës","përkthim"]],
+    fact:"Më 1908, në Boston, Noli mbajti për herë të parë një meshë në gjuhën shqipe, hap i madh drejt njohjes së shqipes si gjuhë kulture.",
+    look:{tone:"marble",hat:"kamilavka",beard:"long",mustache:"small",dress:"cassock"}
+  },
+  {
+    name:"Lasgush Poradeci", years:"1899 – 1987", place:"Pogradec",
+    era:"Letërsia mes dy luftërave", epithet:"Poeti i harmonisë dhe i liqenit",
+    about:[
+      "Lasgushi solli në poezinë shqipe një muzikalitet dhe një thellësi filozofike të rrallë. Në «Vallja e yjeve» (1933) dhe «Ylli i zemrës» (1937) natyra, dashuria dhe kozmosi bashkohen në vargje të latuara me kujdes.",
+      "Përktheu në shqip poetë si Pushkini, Lermontovi dhe Eminesku, duke i dhënë gjuhës një regjistër të ri lirik."
+    ],
+    works:[["1933","Vallja e yjeve"],["1937","Ylli i zemrës"],["—","Përkthime nga Pushkini dhe Eminesku"]],
+    fact:"Emri i tij i vërtetë ishte Llazar Sotir Gusho. «Lasgush» lindi nga bashkimi i emrit me mbiemrin, kurse «Poradeci» nga qyteti i lindjes.",
+    look:{tone:"bronze",hair:"swept",dress:"suit",bowtie:true}
+  },
+  {
+    name:"Migjeni", years:"1911 – 1938", place:"Shkodër",
+    era:"Letërsia mes dy luftërave", epithet:"Poeti i mjerimit dhe i revoltës",
+    about:[
+      "Migjeni (Millosh Gjergj Nikolla) i ktheu sytë e letërsisë shqipe nga legjendat te varfëria dhe padrejtësia e kohës së tij. Vargu i lirë dhe proza e shkurtër e tij sollën modernitetin në letërsinë shqipe.",
+      "Ndonëse jetoi vetëm 26 vjet, «Vargjet e lira» dhe «Novelat e qytetit të veriut» e bënë një nga zërat më ndikues të shekullit XX."
+    ],
+    works:[["1944","Vargjet e lira","botimi i plotë"],["—","Novelat e qytetit të veriut"],["—","Poema e mjerimit","poezi"]],
+    fact:"Botimi i parë i «Vargjeve të lira», më 1936, u ndalua nga censura. Libri doli i plotë vetëm më 1944, pas vdekjes së autorit.",
+    look:{tone:"marble",hair:"slick",headW:.92,chest:.92,dress:"suit"}
+  },
+  {
+    name:"Dritëro Agolli", years:"1931 – 2017", place:"Menkulas, Devoll",
+    era:"Letërsia bashkëkohore", epithet:"Poeti i tokës dhe mjeshtri i satirës",
+    about:[
+      "Agolli është ndër poetët më të dashur të shqiptarëve. Me vëllime si «Devoll, Devoll» dhe poemën «Nënë Shqipëri» i këndoi tokës, fshatit dhe njerëzve të thjeshtë me një gjuhë të ngrohtë e të qartë.",
+      "Në prozë shkroi romanin satirik «Shkëlqimi dhe rënia e shokut Zylo» (1973), një portret me humor i burokratit, si dhe «Komisari Memo» e «Njeriu me top»."
+    ],
+    works:[["1964","Devoll, Devoll","poezi"],["1970","Komisari Memo"],["1973","Shkëlqimi dhe rënia e shokut Zylo"],["1974","Nënë Shqipëri","poemë"]],
+    fact:"Nga viti 1973 deri më 1992 drejtoi Lidhjen e Shkrimtarëve dhe Artistëve të Shqipërisë.",
+    look:{tone:"bronze",hair:"full",mustache:"small",chest:1.1,headW:1.05,dress:"suit"}
+  },
+  {
+    name:"Ismail Kadare", years:"1936 – 2024", place:"Gjirokastër",
+    era:"Letërsia bashkëkohore", epithet:"Shkrimtari shqiptar më i përkthyer në botë",
+    about:[
+      "Kadareja e çoi letërsinë shqipe në skenën botërore. Romanet e tij, nga «Gjenerali i ushtrisë së vdekur» te «Prilli i thyer» dhe «Pallati i ëndrrave», janë përkthyer në dhjetëra gjuhë.",
+      "Përdori mitin, historinë dhe baladat popullore për të folur për pushtetin dhe lirinë. U nderua me çmimet Man Booker International (2005), Princi i Asturias (2009) dhe Neustadt (2020)."
+    ],
+    works:[["1963","Gjenerali i ushtrisë së vdekur"],["1971","Kronikë në gur"],["1978","Prilli i thyer"],["1981","Pallati i ëndrrave"]],
+    fact:"«Kronikë në gur» tregon Gjirokastrën e fëmijërisë së tij, parë me sytë e një djali gjatë Luftës së Dytë Botërore.",
+    look:{tone:"marble",hair:"swept",glasses:true,dress:"suit"}
+  }
+];
+
+/* The literature book: one entry per page; two pages per spread on wide screens. */
+const LIT = [
+`<p class="lb-eyebrow">Libri i letërsisë · Tetor</p>
+<h2>Letërsia shqipe</h2>
+<p class="sub">Nga fjala e kënduar me lahutë te romani i përkthyer në dhjetëra gjuhë</p>
+<div class="lb-orn"><span></span></div>
+<p class="dropcap">Letërsia shqipe u rrit në kushte të vështira: për shekuj pa shtet të vetin, me shkolla shqipe të ndaluara për një kohë të gjatë dhe me autorë të shpërndarë nga Shkodra në Kalabri, nga Stambolli e Bukureshti në Boston.</p>
+<p>Prandaj, për shumë breza, të shkruarit shqip ishte edhe një akt qëndrese: një mënyrë për të ruajtur gjuhën, kujtesën dhe identitetin.</p>
+<p class="note">Shfleto faqet për të njohur periudhat kryesore të saj.</p>`,
+
+`<p class="lb-eyebrow">Para shkrimit</p>
+<h3>Letërsia gojore</h3>
+<p>Për shekuj me radhë, shqiptarët e ruajtën historinë dhe vlerat e tyre me këngë e rrëfime që kalonin gojë më gojë, brez pas brezi.</p>
+<ul class="lb-list dots">
+  <li><span class="y"></span><span><b>Eposi i Kreshnikëve</b>: këngë epike të veriut për trimat Muji e Halili, të kënduara me lahutë.</span></li>
+  <li><span class="y"></span><span><b>Baladat</b>: «Rozafa», për besën dhe flijimin, dhe «Kostandini e Doruntina», për besën që e kapërcen edhe vdekjen.</span></li>
+  <li><span class="y"></span><span><b>Lirika popullore</b>: këngë dashurie, kurbeti e dasme, vajtime dhe përralla.</span></li>
+</ul>
+<p>Kjo pasuri frymëzoi autorët e mëvonshëm. Fishta i dha formë të shkruar ritmit të lahutës, ndërsa Kadareja e rimori legjendën e Doruntinës në romanin «Kush e solli Doruntinën».</p>`,
+
+`<p class="lb-eyebrow">Shekujt XV–XVIII</p>
+<h3>Letërsia e vjetër</h3>
+<p>Librat e parë shqip u shkruan kryesisht nga klerikë katolikë të veriut, që donin t’ua shpjegonin besimin njerëzve në gjuhën e tyre dhe ta ruanin shqipen.</p>
+<ul class="lb-list">
+  <li><span class="y">1462</span><span>Pal Engjëlli shkruan «Formulën e pagëzimit», fjalinë më të vjetër të njohur në shqip.</span></li>
+  <li><span class="y">1555</span><span>Gjon Buzuku boton «Mesharin», librin e parë të shtypur shqip.</span></li>
+  <li><span class="y">1618</span><span>Pjetër Budi boton «Doktrina e kërshterë».</span></li>
+  <li><span class="y">1635</span><span>Frang Bardhi harton fjalorin e parë latinisht–shqip.</span></li>
+  <li><span class="y">1685</span><span>Pjetër Bogdani boton «Çeta e profetëve», vepra më e rëndësishme e kësaj periudhe.</span></li>
+</ul>`,
+
+`<p class="lb-eyebrow">Përtej kufijve</p>
+<h3>Arbëreshët dhe bejtexhinjtë</h3>
+<p>Shqiptarët që u vendosën në Italinë e jugut pas shekullit XV, arbëreshët, krijuan një traditë letrare të tyren, që e ruajti shqipen larg atdheut.</p>
+<ul class="lb-list">
+  <li><span class="y">1592</span><span>Lekë Matrënga boton «E mbësuame e krështerë», librin e parë arbëresh.</span></li>
+  <li><span class="y">1762</span><span>Jul Variboba boton «Gjella e Shën Mërisë së Virgjër».</span></li>
+  <li><span class="y">1836</span><span>Jeronim De Rada boton «Këngët e Milosaos». Pas tij vijnë Zef Serembe dhe Gavril Dara i Ri.</span></li>
+</ul>
+<h4>Bejtexhinjtë</h4>
+<p>Në shekujt XVIII–XIX, poetë myslimanë si Nezim Frakulla dhe Hasan Zyko Kamberi shkruan vjersha shqip me alfabet arab, me fjalë të shumta orientale dhe tema nga jeta e përditshme.</p>`,
+
+`<p class="lb-eyebrow">1878–1912</p>
+<h3>Rilindja Kombëtare</h3>
+<p>Pas Lidhjes së Prizrenit (1878), letërsia u bë armë për çështjen kombëtare. Qëllimet ishin të qarta: një alfabet i përbashkët, shkolla shqipe dhe libra që t’i lexonte i gjithë populli.</p>
+<ul class="lb-list dots">
+  <li><span class="y"></span><span><b>Naim Frashëri</b>: poezia e atdheut dhe e natyrës.</span></li>
+  <li><span class="y"></span><span><b>Sami Frashëri</b>: «Shqipëria ç’ka qenë, ç’është e ç’do të bëhet» (1899), programi i Rilindjes.</span></li>
+  <li><span class="y"></span><span><b>Pashko Vasa</b>: poezia «O moj Shqypni».</span></li>
+  <li><span class="y"></span><span><b>Çajupi, Ndre Mjeda, Thimi Mitko</b> e shumë të tjerë, në Stamboll, Bukuresht, Sofje e Kajro.</span></li>
+</ul>
+<p>Më 1908, Kongresi i Manastirit miratoi alfabetin latin me 36 shkronja që përdorim edhe sot.</p>`,
+
+`<p class="lb-eyebrow">1912–1944</p>
+<h3>Pavarësia dhe vitet mes dy luftërave</h3>
+<p>Pas shpalljes së Pavarësisë (1912), letërsia shqipe u pasurua me gjini, stile dhe rryma të reja.</p>
+<ul class="lb-list dots">
+  <li><span class="y"></span><span><b>Gjergj Fishta</b>: epika kombëtare «Lahuta e Malcís».</span></li>
+  <li><span class="y"></span><span><b>Faik Konica</b>: eseja dhe proza e mprehtë; revista «Albania».</span></li>
+  <li><span class="y"></span><span><b>Fan Noli</b>: përkthimet e klasikëve botërorë.</span></li>
+  <li><span class="y"></span><span><b>Lasgush Poradeci</b>: lirika e pastër dhe muzikore.</span></li>
+  <li><span class="y"></span><span><b>Migjeni</b>: realizmi, vargu i lirë dhe zëri i të varfërve.</span></li>
+  <li><span class="y"></span><span><b>Ernest Koliqi</b>: tregimet «Hija e maleve» (1929).</span></li>
+  <li><span class="y"></span><span><b>Mitrush Kuteli</b>: «Netë shqiptare» (1938).</span></li>
+</ul>`,
+
+`<p class="lb-eyebrow">1944–1990</p>
+<h3>Letërsia nën diktaturë</h3>
+<p>Pas Luftës së Dytë Botërore, regjimi komunist vendosi metodën e «realizmit socialist». Letërsia duhej t’i shërbente partisë dhe censura ishte shumë e rreptë.</p>
+<p>Shumë shkrimtarë u burgosën, u internuan ose u pushkatuan, si poeti Havzi Nela më 1988. Veprat e Fishtës, Koliqit e Kutelit u ndaluan për dekada.</p>
+<p>Megjithatë, autorë si Ismail Kadare, Dritëro Agolli, Fatos Arapi dhe Petro Marko krijuan vepra me vlerë të qëndrueshme, shpesh duke folur për të tashmen përmes historisë, mitit dhe alegorisë.</p>`,
+
+`<p class="lb-eyebrow">Kosova dhe pas vitit 1990</p>
+<h3>Një letërsi, shumë qendra</h3>
+<p>Në Kosovë, letërsia shqipe u zhvillua sidomos pas vitit 1949, kur Esad Mekuli themeloi revistën «Jeta e re». Emra kryesorë janë Adem Demaçi («Gjarpijtë e gjakut», 1958), Anton Pashku, Azem Shkreli, Ali Podrimja, Din Mehmeti dhe Rexhep Qosja («Vdekja më vjen prej syve të tillë», 1974).</p>
+<h4>Pas rënies së komunizmit</h4>
+<p>Me vitin 1990 erdhi liria e shprehjes. U ribotuan autorët e ndaluar, u shfaqën zëra të rinj dhe shumë shkrimtarë shqiptarë nisën të shkruajnë e të botojnë edhe në gjuhë të tjera, në Itali, Francë, Zvicër e gjetkë.</p>`,
+
+`<p class="lb-eyebrow">Gjuha e letërsisë</p>
+<h3>Gegërishtja, toskërishtja dhe shqipja standarde</h3>
+<p>Shqipja ka dy dialekte kryesore: gegërishten në veri dhe toskërishten në jug. Fishta e Migjeni shkruan gegërisht; Naimi e Çajupi toskërisht.</p>
+<ul class="lb-list">
+  <li><span class="y">1908</span><span>Kongresi i Manastirit: alfabeti i përbashkët i shqipes.</span></li>
+  <li><span class="y">1972</span><span>Kongresi i Drejtshkrimit në Tiranë: rregullat e gjuhës letrare standarde.</span></li>
+</ul>
+<p>Shqipja përbën një degë më vete në familjen e gjuhëve indoevropiane, pa «motra» të afërta të gjalla. Kjo e bën çdo tekst të vjetër shqip një dëshmi të çmuar për gjuhëtarët.</p>`,
+
+`<p class="lb-eyebrow">Kronologji e shkurtër</p>
+<h3>Datat që duhen mbajtur mend</h3>
+<ul class="lb-list">
+  <li><span class="y">1462</span><span>«Formula e pagëzimit»</span></li>
+  <li><span class="y">1555</span><span>«Meshari» i Buzukut</span></li>
+  <li><span class="y">1685</span><span>«Çeta e profetëve» e Bogdanit</span></li>
+  <li><span class="y">1836</span><span>«Këngët e Milosaos» e De Radës</span></li>
+  <li><span class="y">1886</span><span>«Bagëti e Bujqësi» e Naimit</span></li>
+  <li><span class="y">1908</span><span>Kongresi i Manastirit</span></li>
+  <li><span class="y">1912</span><span>Shpallja e Pavarësisë</span></li>
+  <li><span class="y">1937</span><span>«Lahuta e Malcís», botimi i plotë</span></li>
+  <li><span class="y">1963</span><span>«Gjenerali i ushtrisë së vdekur»</span></li>
+  <li><span class="y">1972</span><span>Kongresi i Drejtshkrimit</span></li>
+  <li><span class="y">2005</span><span>Kadare fiton Man Booker International</span></li>
+</ul>
+<div class="lb-orn"><span></span></div>
+<p class="note">Fund. Faleminderit që e shfletove këtë libër!</p>`
+];
+
+/* ================= DOM ================= */
+const $ = s => document.querySelector(s);
+const N = FIGS.length;
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const chips = FIGS.map((f,i)=>{
+  const b = document.createElement("button");
+  b.className = "chip"; b.type = "button"; b.setAttribute("aria-pressed","false");
+  b.innerHTML = `<b>${f.name}</b><span>${f.years.replace(/ /g,"")}</span>`;
+  b.addEventListener("click",()=> selected===i ? closePanel() : select(i));
+  $("#rosterScroll").appendChild(b);
+  return b;
+});
+const litChip = document.createElement("button");
+litChip.className = "chip lit"; litChip.type = "button";
+litChip.innerHTML = `<b>Libri i letërsisë</b><span>historia e plotë</span>`;
+litChip.addEventListener("click",()=>openLit());
+$("#rosterScroll").appendChild(litChip);
+
+function fillPanel(i){
+  const f = FIGS[i];
+  $("#pEra").textContent = f.era;
+  $("#pName").textContent = f.name;
+  $("#pLife").textContent = `${f.years} · ${f.place}`;
+  $("#pEpithet").textContent = f.epithet;
+  const q = $("#pQuote");
+  if(f.quote){ q.hidden=false; q.innerHTML = `«${f.quote[0]}»<small>${f.quote[1]}</small>`; } else q.hidden = true;
+  $("#pAbout").innerHTML = f.about.map(p=>`<p>${p}</p>`).join("");
+  $("#pWorks").innerHTML = f.works.map(([y,t,k])=>`<li><span class="yr">${y}</span><span class="tt">${t}${k?` <small>· ${k}</small>`:""}</span></li>`).join("");
+  $("#pFact").textContent = f.fact;
+  $("#pCount").textContent = `${i+1} / ${N}`;
+  const last = i===N-1;
+  $("#endBox").hidden = !last;
+  $("#nextBtn").textContent = last ? "Shfleto librin →" : "Tjetri →";
+  $("#panel").scrollTop = 0;
+}
+
+/* ================= STATE ================= */
+let phase = "closed";            // closed | opening | ready | closing
+let tOpen = 0, tClose = 0, burstFired = false;
+let selected = -1, hovered = -1;
+let ringRot = 0, ringTarget = 0, ringVel = 0;
+let litOpen = false;
+let closeBook = ()=>{};
+const SPEED = reduced ? 2.6 : 1;
+const END = 6.0;
+
+function select(i){
+  if(phase!=="ready") return;
+  if(litOpen) closeLit();
+  selected = i;
+  let a = -i*2*Math.PI/N;
+  while(a - ringRot > Math.PI) a -= 2*Math.PI;
+  while(a - ringRot < -Math.PI) a += 2*Math.PI;
+  ringTarget = a; ringVel = 0;
+  fillPanel(i);
+  const p = $("#panel"); p.classList.add("open"); p.removeAttribute("inert");
+  chips.forEach((c,j)=>c.setAttribute("aria-pressed", j===i ? "true":"false"));
+  chips[i].scrollIntoView({block:"nearest",inline:"center",behavior:reduced?"auto":"smooth"});
+  $("#hint").hidden = true;
+}
+function closePanel(){
+  selected = -1;
+  const p = $("#panel"); p.classList.remove("open"); p.setAttribute("inert","");
+  chips.forEach(c=>c.setAttribute("aria-pressed","false"));
+}
+$("#closeBtn").onclick = closePanel;
+$("#prevBtn").onclick = ()=> select((selected-1+N)%N);
+$("#nextBtn").onclick = ()=> selected===N-1 ? openLit() : select((selected+1)%N);
+$("#endLitBtn").onclick = ()=> openLit();
+$("#endCloseBtn").onclick = ()=> closeBook();
+$("#litTopBtn").onclick = ()=> openLit();
+$("#closeTopBtn").onclick = ()=> closeBook();
+
+function showReadyUI(on){
+  $("#masthead").hidden = !on; $("#topActions").hidden = !on;
+  $("#roster").hidden = !on; $("#hint").hidden = !on;
+}
+
+/* ================= LITERATURE BOOK ================= */
+const lbBook = $("#lbBook"), lbL = $("#lbLeft"), lbR = $("#lbRight");
+let litPage = 0, flipping = false;
+const twoUp = ()=> innerWidth >= 760;
+const pageHTML = i => (i<0 || i>=LIT.length) ? "" : `<div class="lb-inner">${LIT[i]}</div><div class="lb-folio">— ${i+1} —</div>`;
+function renderLit(){
+  if(twoUp()){
+    litPage -= litPage%2;
+    lbL.innerHTML = pageHTML(litPage); lbR.innerHTML = pageHTML(litPage+1);
+  }else{
+    lbR.innerHTML = pageHTML(litPage);
+  }
+  const step = twoUp() ? 2 : 1;
+  $("#lbPrev").disabled = litPage===0;
+  $("#lbNext").disabled = litPage+step >= LIT.length;
+  $("#lbCount").textContent = twoUp()
+    ? `Faqet ${litPage+1}–${Math.min(litPage+2,LIT.length)} nga ${LIT.length}`
+    : `Faqja ${litPage+1} nga ${LIT.length}`;
+}
+function flip(dir){
+  if(flipping) return;
+  const two = twoUp(), step = two ? 2 : 1;
+  const np = litPage + dir*step;
+  if(np<0 || np>=LIT.length) return;
+  if(reduced || !lbBook.animate){ litPage = np; renderLit(); return; }
+  flipping = true;
+  if(two){
+    const leaf = document.createElement("div");
+    leaf.className = "lb-leaf " + (dir>0 ? "fwd" : "bwd");
+    if(dir>0){
+      leaf.innerHTML = `<div class="lb-face f skin-r">${pageHTML(litPage+1)}</div><div class="lb-face b skin-l">${pageHTML(np)}</div>`;
+      lbR.innerHTML = pageHTML(np+1);
+    }else{
+      leaf.innerHTML = `<div class="lb-face f skin-l">${pageHTML(litPage)}</div><div class="lb-face b skin-r">${pageHTML(np+1)}</div>`;
+      lbL.innerHTML = pageHTML(np);
+    }
+    lbBook.appendChild(leaf);
+    const a = leaf.animate([{transform:"rotateY(0deg)"},{transform:`rotateY(${dir>0?-180:180}deg)`}],{duration:900,easing:"cubic-bezier(.45,.05,.3,1)"});
+    a.onfinish = ()=>{ litPage = np; leaf.remove(); renderLit(); flipping = false; };
+  }else{
+    lbR.style.transformOrigin = dir>0 ? "left center" : "right center";
+    const a = lbR.animate([{transform:"perspective(1400px) rotateY(0deg)"},{transform:`perspective(1400px) rotateY(${dir>0?-90:90}deg)`}],{duration:260,easing:"ease-in"});
+    a.onfinish = ()=>{
+      litPage = np; renderLit();
+      const b = lbR.animate([{transform:`perspective(1400px) rotateY(${dir>0?90:-90}deg)`},{transform:"perspective(1400px) rotateY(0deg)"}],{duration:300,easing:"ease-out"});
+      b.onfinish = ()=>{ flipping = false; };
+    };
+  }
+}
+function openLit(){
+  if(phase!=="ready") return;
+  closePanel();
+  litOpen = true; litPage = 0; renderLit();
+  $("#litBook").hidden = false;
+  $("#lbNext").focus({preventScroll:true});
+}
+function closeLit(){
+  litOpen = false;
+  $("#litBook").hidden = true;
+}
+$("#lbPrev").onclick = ()=>flip(-1);
+$("#lbNext").onclick = ()=>flip(1);
+$("#lbBackBtn").onclick = closeLit;
+$("#lbClose").onclick = ()=> closeBook();
+addEventListener("resize",()=>{ if(litOpen && !flipping) renderLit(); });
+
+addEventListener("keydown",e=>{
+  if(phase!=="ready") return;
+  if(litOpen){
+    if(e.key==="Escape") closeLit();
+    if(e.key==="ArrowRight") flip(1);
+    if(e.key==="ArrowLeft") flip(-1);
+    return;
+  }
+  if(e.key==="Escape") closePanel();
+  if(e.key==="ArrowRight") select(selected<0?0:(selected+1)%N);
+  if(e.key==="ArrowLeft") select(selected<0?N-1:(selected-1+N)%N);
+});
+
+/* ================= 3D ================= */
+let renderer = null;
+try{
+  if(!window.THREE) throw new Error("no three");
+  renderer = new THREE.WebGLRenderer({canvas:$("#stage"),antialias:true});
+}catch(err){ renderer = null; }
+
+if(!renderer){
+  // No WebGL: keep the content reachable through the roster, panel and literature book.
+  $("#intro").classList.add("gone");
+  const fb = document.createElement("p"); fb.id="fallback";
+  fb.textContent = "Ky shfletues nuk mund të shfaqë skenën 3D. Zgjidh një figurë më poshtë për të lexuar për të.";
+  document.body.appendChild(fb);
+  phase = "ready"; showReadyUI(true); $("#hint").hidden = true; $("#closeTopBtn").hidden = true; $("#lbClose").hidden = true; $("#endCloseBtn").hidden = true;
+}else{
+  boot();
+}
+
+async function boot(){
+  try{
+    await Promise.race([
+      Promise.all([
+        document.fonts.load('80px "IM Fell English"'),
+        document.fonts.load('italic 80px "IM Fell English"'),
+        document.fonts.load('40px "Alegreya Sans"')
+      ]),
+      new Promise(r=>setTimeout(r,2500))
+    ]);
+  }catch(e){}
+  build();
+}
+
+function build(){
+  const V3 = THREE.Vector3;
+  const clamp01 = x=>Math.min(1,Math.max(0,x));
+  const seg = (t,a,b)=>clamp01((t-a)/(b-a));
+  const ease = x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+  const damp = (a,b,l,dt)=>a+(b-a)*(1-Math.exp(-l*dt));
+  const smooth = (e0,e1,x)=>{ const t = clamp01((x-e0)/(e1-e0)); return t*t*(3-2*t); };
+  const gauss = (dx,dy,s)=>Math.exp(-(dx*dx+dy*dy)/(2*s*s));
+
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = .92;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x140d0f);
+  scene.fog = new THREE.Fog(0x140d0f, 18, 46);
+  const camera = new THREE.PerspectiveCamera(40,1,0.05,120);
+
+  // Soft studio reflections for bronze and marble
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const env = new THREE.Scene();
+  env.add(new THREE.Mesh(new THREE.BoxGeometry(20,20,20),new THREE.MeshBasicMaterial({color:0x2b1b15,side:THREE.BackSide})));
+  const envA = new THREE.Mesh(new THREE.PlaneGeometry(10,5),new THREE.MeshBasicMaterial({color:0xffe0b0,side:THREE.DoubleSide}));
+  envA.position.set(0,9.5,3); envA.rotation.x = Math.PI/2; env.add(envA);
+  const envB = new THREE.Mesh(new THREE.PlaneGeometry(6,8),new THREE.MeshBasicMaterial({color:0x7a4b33,side:THREE.DoubleSide}));
+  envB.position.set(-9.5,3,0); envB.rotation.y = Math.PI/2; env.add(envB);
+  const envC = new THREE.Mesh(new THREE.PlaneGeometry(6,6),new THREE.MeshBasicMaterial({color:0x5d6a8a,side:THREE.DoubleSide}));
+  envC.position.set(6,4,-9.5); env.add(envC);
+  scene.environment = pmrem.fromScene(env,0.04).texture;
+
+  // Lights
+  scene.add(new THREE.HemisphereLight(0xffe6c4,0x1a0e0c,0.38));
+  const key = new THREE.SpotLight(0xffd6a2,2.3,46,0.78,0.65,1.1);
+  key.position.set(2.5,14,8); key.castShadow = true;
+  key.shadow.mapSize.set(2048,2048); key.shadow.bias = -0.0004; key.shadow.camera.near = 4; key.shadow.camera.far = 40;
+  scene.add(key,key.target);
+  const rim = new THREE.DirectionalLight(0x9fb2e0,0.6); rim.position.set(-7,6,-10); scene.add(rim);
+  const fill = new THREE.DirectionalLight(0xffc89a,0.25); fill.position.set(6,3,6); scene.add(fill);
+  const bookGlow = new THREE.PointLight(0xffb25a,0,14,2); bookGlow.position.set(0,1.2,0); scene.add(bookGlow);
+
+  /* ---------- canvas textures ---------- */
+  function canvasTex(w,h,draw){
+    const c = document.createElement("canvas"); c.width=w; c.height=h;
+    const g = c.getContext("2d"); draw(g,w,h);
+    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = maxAniso;
+    return t;
+  }
+  function wrapText(g,text,x,y,maxW,lh){
+    const words = text.split(" "); let line = "";
+    const out = [];
+    for(const w of words){
+      const test = line ? line+" "+w : w;
+      if(g.measureText(test).width > maxW && line){ out.push(line); line = w; } else line = test;
+    }
+    if(line) out.push(line);
+    out.forEach((l,k)=>g.fillText(l,x,y+k*lh));
+    return y + out.length*lh;
+  }
+  function speckle(g,w,h,n,col,a){
+    g.fillStyle = col;
+    for(let k=0;k<n;k++){ g.globalAlpha = Math.random()*a; g.fillRect(Math.random()*w,Math.random()*h,1+Math.random()*2,1+Math.random()*2); }
+    g.globalAlpha = 1;
+  }
+  function leather(g,w,h){
+    const gr = g.createRadialGradient(w*.45,h*.4,20,w/2,h/2,w*.85);
+    gr.addColorStop(0,"#7a2730"); gr.addColorStop(1,"#3e1016");
+    g.fillStyle = gr; g.fillRect(0,0,w,h);
+    speckle(g,w,h,9000,"#000",.25); speckle(g,w,h,3000,"#c9776a",.12);
+  }
+  function parchment(g,w,h,gutterLeft){
+    g.fillStyle = "#efe1c2"; g.fillRect(0,0,w,h);
+    const gr = g.createRadialGradient(w/2,h/2,w*.2,w/2,h/2,w*.9);
+    gr.addColorStop(0,"rgba(255,248,230,.0)"); gr.addColorStop(1,"rgba(150,105,55,.35)");
+    g.fillStyle = gr; g.fillRect(0,0,w,h);
+    const gs = gutterLeft ? g.createLinearGradient(0,0,90,0) : g.createLinearGradient(w,0,w-90,0);
+    gs.addColorStop(0,"rgba(90,55,25,.45)"); gs.addColorStop(1,"rgba(90,55,25,0)");
+    g.fillStyle = gs; g.fillRect(0,0,w,h);
+    speckle(g,w,h,2500,"#7a5a30",.18);
+  }
+  function diamond(g,x,y,s){ g.beginPath(); g.moveTo(x,y-s); g.lineTo(x+s,y); g.lineTo(x,y+s); g.lineTo(x-s,y); g.closePath(); g.fill(); }
+  function ornament(g,cx,y,half,col){
+    g.strokeStyle = col; g.fillStyle = col; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(cx-half,y); g.lineTo(cx-22,y); g.moveTo(cx+22,y); g.lineTo(cx+half,y); g.stroke();
+    diamond(g,cx,y,12); diamond(g,cx-half,y,6); diamond(g,cx+half,y,6);
+  }
+
+  // Floor
+  const floorTex = canvasTex(512,512,(g,w,h)=>{
+    const gr = g.createRadialGradient(w/2,h/2,10,w/2,h/2,w/2);
+    gr.addColorStop(0,"#3a2620"); gr.addColorStop(.55,"#22161a"); gr.addColorStop(1,"#140d0f");
+    g.fillStyle = gr; g.fillRect(0,0,w,h);
+  });
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(42,72),new THREE.MeshStandardMaterial({map:floorTex,roughness:.95,metalness:0}));
+  floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; scene.add(floor);
+
+  const R = 5.3;
+  const ringLine = new THREE.Mesh(new THREE.RingGeometry(R-.015,R+.015,128),new THREE.MeshBasicMaterial({color:0xd8ab52,transparent:true,opacity:0,depthWrite:false}));
+  ringLine.rotation.x = -Math.PI/2; ringLine.position.y = .006; scene.add(ringLine);
+
+  const coverTex = canvasTex(1024,1332,(g,w,h)=>{
+    leather(g,w,h);
+    g.strokeStyle = "#d8ab52"; g.lineWidth = 7; g.strokeRect(54,54,w-108,h-108);
+    g.lineWidth = 2; g.strokeRect(78,78,w-156,h-156);
+    g.fillStyle = "#d8ab52";
+    [[78,78],[w-78,78],[78,h-78],[w-78,h-78]].forEach(([x,y])=>diamond(g,x,y,16));
+    g.textAlign = "center"; g.textBaseline = "alphabetic";
+    g.font = '30px "Alegreya Sans", sans-serif'; g.fillStyle = "#e6c27a";
+    g.fillText("L Ë N D A :   L E T Ë R S I A", w/2, 300);
+    ornament(g,w/2,360,230,"#d8ab52");
+    g.fillStyle = "#e9c57c"; g.font = '210px "IM Fell English", Georgia, serif';
+    g.fillText("Tetori", w/2, 600);
+    g.font = 'italic 84px "IM Fell English", Georgia, serif';
+    g.fillText("muaji i letërsisë", w/2, 715);
+    ornament(g,w/2,800,230,"#d8ab52");
+    g.font = 'italic 44px "IM Fell English", Georgia, serif'; g.fillStyle = "#d9b26a";
+    g.fillText("nga De Rada te Kadare", w/2, 1040);
+    g.font = '30px "Alegreya Sans", sans-serif'; g.fillStyle = "#c79e58";
+    g.fillText("N Ë N T Ë   Z Ë R A   T Ë   S H Q I P E S", w/2, 1100);
+    g.font = 'italic 34px "IM Fell English", Georgia, serif'; g.fillStyle = "#c79e58";
+    g.fillText("Punoi: Dion Durma", w/2, 1195);
+  });
+  const leatherTex = canvasTex(256,256,leather);
+  const endpaperTex = canvasTex(512,670,(g,w,h)=>{
+    g.fillStyle="#5b1d24"; g.fillRect(0,0,w,h);
+    g.strokeStyle="rgba(216,171,82,.35)"; g.lineWidth=2;
+    for(let y=-h;y<h*2;y+=26){ g.beginPath(); g.moveTo(0,y); g.lineTo(w,y+h*.4); g.stroke(); }
+  });
+  const rightPageTex = canvasTex(1024,1344,(g,w,h)=>{
+    parchment(g,w,h,true);
+    g.textAlign="left"; g.fillStyle="#6b1f26";
+    g.font='30px "Alegreya Sans", sans-serif';
+    g.fillText("N J Ë   L I B Ë R   Q Ë   H A P E T", 130, 190);
+    g.fillStyle="#2a1a12"; g.font='96px "IM Fell English", Georgia, serif';
+    g.fillText("Nga «Meshari»", 126, 320);
+    g.font='italic 96px "IM Fell English", Georgia, serif'; g.fillText("te sot", 126, 420);
+    g.fillStyle="#6b1f26"; g.font='190px "IM Fell English", Georgia, serif'; g.fillText("M", 120, 640);
+    g.fillStyle="#3a2618"; g.font='42px "Alegreya Sans", sans-serif';
+    let y = wrapText(g,"ë 1555 Gjon Buzuku shtypi «Mesharin», librin më të vjetër të njohur në gjuhën shqipe.",260,540,640,58);
+    y = wrapText(g,"Që atëherë shqipja u bë gjuhë poezie, rrëfimi dhe teatri. Në tetor, muajin e letërsisë, këto faqe ngrenë nëntë autorë që e ndërtuan atë rrugë: poetë, prozatorë, përkthyes e dramaturgë.",130,Math.max(y,690)+30,770,58);
+    g.font='italic 40px "IM Fell English", Georgia, serif'; g.fillStyle="#6b1f26";
+    wrapText(g,"Kliko një statujë për të lexuar se çfarë bëri për letërsinë shqipe.",130,y+40,770,54);
+    g.textAlign="center"; g.fillStyle="#7a5a3a"; g.font='34px "IM Fell English", Georgia, serif';
+    g.fillText("— 1 —", w/2, h-90);
+  });
+  const leftPageTex = canvasTex(1024,1344,(g,w,h)=>{
+    parchment(g,w,h,false);
+    g.textAlign="center"; g.fillStyle="#6b1f26";
+    g.font='200px "IM Fell English", Georgia, serif'; g.fillText("Tetori", w/2-30, 340);
+    g.fillStyle="#2a1a12"; g.font='italic 74px "IM Fell English", Georgia, serif'; g.fillText("muaji i letërsisë", w/2-30, 440);
+    ornament(g,w/2-30,520,220,"#8a5a2a");
+    g.font='30px "Alegreya Sans", sans-serif'; g.fillStyle="#6b1f26";
+    g.fillText("N Ë   K Ë T Ë   L I B Ë R", w/2-30, 620);
+    FIGS.forEach((f,i)=>{
+      const y = 700 + i*58;
+      g.textAlign="left"; g.fillStyle="#2a1a12"; g.font='40px "IM Fell English", Georgia, serif';
+      g.fillText(f.name, 170, y);
+      g.textAlign="right"; g.fillStyle="#7a5a3a"; g.font='32px "Alegreya Sans", sans-serif';
+      g.fillText(f.years.replace(/ /g,""), 830, y);
+    });
+    g.textAlign="center"; g.fillStyle="#7a5a3a"; g.font='34px "IM Fell English", Georgia, serif';
+    g.fillText("— i —", w/2-30, h-90);
+  });
+  const blankPageTex = canvasTex(512,672,(g,w,h)=>parchment(g,w,h,true));
+  const edgeTex = canvasTex(64,256,(g,w,h)=>{
+    g.fillStyle="#e7d6b2"; g.fillRect(0,0,w,h);
+    g.strokeStyle="rgba(120,90,50,.35)"; g.lineWidth=1;
+    for(let k=0;k<w;k+=3){ g.beginPath(); g.moveTo(k,0); g.lineTo(k,h); g.stroke(); }
+  });
+  function plaqueTex(f){
+    return canvasTex(512,192,(g,w,h)=>{
+      const gr=g.createLinearGradient(0,0,0,h); gr.addColorStop(0,"#3a2e2a"); gr.addColorStop(1,"#241c1a");
+      g.fillStyle=gr; g.fillRect(0,0,w,h);
+      g.strokeStyle="#c89c4c"; g.lineWidth=4; g.strokeRect(10,10,w-20,h-20);
+      g.textAlign="center"; g.fillStyle="#e7c27a";
+      let fs=56; do{ g.font=`${fs}px "IM Fell English", Georgia, serif`; fs-=2; }while(g.measureText(f.name).width>w-60 && fs>24);
+      g.fillText(f.name,w/2,96);
+      g.fillStyle="#b39a76"; g.font='30px "Alegreya Sans", sans-serif';
+      g.fillText(f.years,w/2,148);
+    });
+  }
+  // Statue surfaces: veined marble and patinated bronze
+  const marbleTex = canvasTex(1024,1024,(g,w,h)=>{
+    g.fillStyle="#f5f0e7"; g.fillRect(0,0,w,h);
+    for(let k=0;k<22;k++){
+      g.strokeStyle=`rgba(120,108,96,${.05+Math.random()*.13})`; g.lineWidth=.6+Math.random()*2.4;
+      g.beginPath(); let x=Math.random()*w, y=Math.random()*h; g.moveTo(x,y);
+      for(let s=0;s<9;s++){ const nx=x+(Math.random()*2-1)*170, ny=y+Math.random()*150-30; g.quadraticCurveTo((x+nx)/2+(Math.random()*2-1)*60,(y+ny)/2,nx,ny); x=nx; y=ny; }
+      g.stroke();
+    }
+    speckle(g,w,h,22000,"#8a7f72",.1);
+  });
+  marbleTex.wrapS = marbleTex.wrapT = THREE.RepeatWrapping;
+  const bronzeTex = canvasTex(512,512,(g,w,h)=>{
+    g.fillStyle="#ffffff"; g.fillRect(0,0,w,h);
+    for(let k=0;k<70;k++){
+      const x=Math.random()*w, y=Math.random()*h, r=10+Math.random()*60, green=Math.random()<.35;
+      const gr=g.createRadialGradient(x,y,0,x,y,r);
+      gr.addColorStop(0, green ? "rgba(90,150,120,.35)" : "rgba(60,35,20,.28)"); gr.addColorStop(1,"rgba(0,0,0,0)");
+      g.fillStyle=gr; g.fillRect(x-r,y-r,2*r,2*r);
+    }
+    speckle(g,w,h,14000,"#3a2614",.25);
+  });
+  bronzeTex.wrapS = bronzeTex.wrapT = THREE.RepeatWrapping;
+
+  /* ---------- the book ---------- */
+  const W = 3.0, D = 3.9, C = 0.05, Hb = 0.36;       // half-width, depth, cover thickness, page block height
+  const T = 2*C + Hb, YP = T/2;                       // total thickness, spine pivot height
+  const book = new THREE.Group(); scene.add(book);
+  const leatherMat = new THREE.MeshStandardMaterial({map:leatherTex,roughness:.62,metalness:.05});
+  const edgeMat = new THREE.MeshStandardMaterial({map:edgeTex,roughness:.9});
+  const mk = (geo,mat,parent,x,y,z)=>{ const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true; parent.add(m); return m; };
+
+  mk(new THREE.BoxGeometry(W,C,D),leatherMat,book,W/2,C/2,0);                       // back board
+  mk(new THREE.BoxGeometry(0.1,T,D),leatherMat,book,0,T/2,0);                      // spine
+  const rightTop = new THREE.MeshStandardMaterial({map:rightPageTex,roughness:.85});
+  mk(new THREE.BoxGeometry(W-.12,Hb-.02,D-.12),[edgeMat,edgeMat,rightTop,edgeMat,edgeMat,edgeMat],book,W/2,C+(Hb-.02)/2,0);
+
+  const leftGeo = new THREE.BoxGeometry(W-.12,Hb-.02,D-.12); leftGeo.translate(0,(Hb-.02)/2,0);
+  const leftTop = new THREE.MeshStandardMaterial({map:leftPageTex,roughness:.85});
+  const leftBlock = mk(leftGeo,[edgeMat,edgeMat,leftTop,edgeMat,edgeMat,edgeMat],book,-W/2,C,0);
+  leftBlock.scale.y = .02; leftBlock.visible = false;
+
+  const coverPivot = new THREE.Group(); coverPivot.position.set(0,YP,0); book.add(coverPivot);
+  const coverMats = [leatherMat,leatherMat,
+    new THREE.MeshStandardMaterial({map:coverTex,roughness:.55,metalness:.08}),
+    new THREE.MeshStandardMaterial({map:endpaperTex,roughness:.8}),
+    leatherMat,leatherMat];
+  mk(new THREE.BoxGeometry(W,C,D),coverMats,coverPivot,W/2,Hb/2+C/2,0);
+
+  const pageMat = new THREE.MeshStandardMaterial({map:blankPageTex,roughness:.9,side:THREE.DoubleSide});
+  const pages = [];
+  for(let i=0;i<6;i++){
+    const pv = new THREE.Group(); pv.position.set(0,YP,0); book.add(pv);
+    const geo = new THREE.PlaneGeometry(W-.14,D-.14,1,1); geo.rotateX(-Math.PI/2); geo.translate((W-.14)/2+.05,0,0);
+    const m = new THREE.Mesh(geo,pageMat); m.position.y = (C+Hb-.018+.0025*(5-i)) - YP; m.receiveShadow = true;
+    pv.add(m); pages.push(pv);
+  }
+
+  /* ---------- sculpted statue geometry ---------- */
+  const HEAD_S = [.31,.39,.34];   // head ellipsoid half-axes
+
+  // A sphere pushed and pulled into a face: brow, eye sockets, nose, cheekbones, lips, chin, jaw.
+  function headGeometry(){
+    const geo = new THREE.SphereGeometry(1,160,120);
+    const p = geo.attributes.position, v = new V3();
+    for(let k=0;k<p.count;k++){
+      v.fromBufferAttribute(p,k);
+      let x=v.x, y=v.y, z=v.z;
+      const f = smooth(.25,.85,z);
+      if(y<0) x *= 1 - .26*Math.pow(-y,1.7);
+      if(z<0 && y>-.3) z *= 1.07;
+      let r = 1;
+      r -= .12*f*(gauss(x-.36,y-.12,.12)+gauss(x+.36,y-.12,.12));
+      r += .05*f*Math.exp(-((y-.3)**2)/(2*.055**2))*Math.exp(-(x*x)/(2*.4**2));
+      const nx = Math.exp(-(x*x)/(2*.075*.075));
+      let np = 0;
+      if(y<.22 && y>-.32){ np = .24*smooth(.22,-.2,y); if(y<-.2) np *= Math.max(0,1-(-.2-y)/.1); }
+      r += f*nx*np;
+      r += f*.07*gauss(x,y+.2,.08);
+      r += f*.05*(gauss(x-.11,y+.25,.06)+gauss(x+.11,y+.25,.06));
+      r += .05*f*(gauss(x-.5,y+.05,.16)+gauss(x+.5,y+.05,.16));
+      const lipx = Math.exp(-(x*x)/(2*.16*.16));
+      r += f*lipx*(.04*Math.exp(-((y+.43)**2)/(2*.03**2)) + .045*Math.exp(-((y+.55)**2)/(2*.035**2)));
+      r -= f*.03*Math.exp(-(x*x)/(2*.18*.18))*Math.exp(-((y+.49)**2)/(2*.02**2));
+      r += f*.07*gauss(x,y+.8,.17);
+      p.setXYZ(k,x*r,y*r,z*r);
+    }
+    geo.computeVertexNormals();
+    return geo;
+  }
+  const HEAD_GEO = headGeometry();
+
+  // Hair: a cap carved with combed strands
+  function hairGeometry(r,theta,amp,freq){
+    const geo = new THREE.SphereGeometry(r,128,56,0,Math.PI*2,0,Math.PI*theta);
+    const p = geo.attributes.position, v = new V3(), n = new V3();
+    for(let k=0;k<p.count;k++){
+      v.fromBufferAttribute(p,k); n.copy(v).normalize();
+      const d = amp*Math.sin(n.x*freq + Math.sin(n.z*4)*1.5) + amp*.45*Math.sin(n.z*freq*.6 + n.x*9);
+      v.multiplyScalar(1+d); p.setXYZ(k,v.x,v.y,v.z);
+    }
+    geo.computeVertexNormals();
+    return geo;
+  }
+  // Curls for beards and tufts
+  function curlGeometry(freq,amp){
+    const geo = new THREE.SphereGeometry(1,72,54);
+    const p = geo.attributes.position, v = new V3();
+    for(let k=0;k<p.count;k++){
+      v.fromBufferAttribute(p,k);
+      const d = amp*Math.sin(v.x*freq)*Math.sin(v.y*freq+1)*Math.sin(v.z*freq+2) + amp*.4*Math.sin(v.y*freq*2.6);
+      v.multiplyScalar(1+d); p.setXYZ(k,v.x,v.y,v.z);
+    }
+    geo.computeVertexNormals();
+    return geo;
+  }
+  const CURL_GEO = curlGeometry(14,.07);
+  const TUFT_GEO = curlGeometry(10,.09);
+
+  // Torso: an ellipsoid dome; clothing details are laid onto its surface
+  const TB = .62, TC = .42;
+  function torsoSurf(a){ return (x,y)=>TC*Math.sqrt(Math.max(0,1-(x/a)**2-(y/TB)**2)); }
+  function torsoNormal(a,x,y,z){ return new V3(x/(a*a),y/(TB*TB),z/(TC*TC)).normalize(); }
+  function resample(pts,n){
+    const L=[]; let tot=0;
+    for(let i=1;i<pts.length;i++){ const d=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]); L.push(d); tot+=d; }
+    const out=[];
+    for(let k=0;k<n;k++){
+      let t=k/(n-1)*tot, i=0;
+      while(i<L.length-1 && t>L[i]){ t-=L[i]; i++; }
+      const u = L[i] ? Math.min(1,t/L[i]) : 0;
+      out.push([pts[i][0]+(pts[i+1][0]-pts[i][0])*u, pts[i][1]+(pts[i+1][1]-pts[i][1])*u]);
+    }
+    return out;
+  }
+  function ribbon(A,B,off,surf,n=28,m=5){
+    const a=resample(A,n), b=resample(B,n), pos=[], uv=[], idx=[];
+    for(let i=0;i<n;i++) for(let j=0;j<=m;j++){
+      const u=j/m, x=a[i][0]+(b[i][0]-a[i][0])*u, y=a[i][1]+(b[i][1]-a[i][1])*u;
+      pos.push(x,y,surf(x,y)+off); uv.push(u*.3,i/(n-1)*.6);
+    }
+    for(let i=0;i<n-1;i++) for(let j=0;j<m;j++){ const p=i*(m+1)+j, q=p+m+1; idx.push(p,q,p+1,p+1,q,q+1); }
+    const g=new THREE.BufferGeometry();
+    g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));
+    g.setAttribute("uv",new THREE.Float32BufferAttribute(uv,2));
+    g.setIndex(idx); g.computeVertexNormals();
+    return g;
+  }
+  function edgeTube(P,off,surf,r){
+    const pts = resample(P,30).map(([x,y])=>new V3(x,y,surf(x,y)+off));
+    return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),48,r,6,false);
+  }
+  const mirror = P=>P.map(([x,y])=>[-x,y]);
+
+  /* ---------- statues ---------- */
+  const TONES = {
+    bronze:{color:0x9a6c3a,metalness:.8,roughness:.38,env:1.1,map:bronzeTex},
+    marble:{color:0xdcd3c3,metalness:0,roughness:.42,env:.55,map:marbleTex}
+  };
+  const stoneMat = new THREE.MeshStandardMaterial({color:0x2a1f1c,roughness:.8,metalness:.05,envMapIntensity:.4});
+  const capMat = new THREE.MeshStandardMaterial({color:0x3a2c27,roughness:.6,metalness:.08,envMapIntensity:.5});
+  const hitMat = new THREE.MeshBasicMaterial({visible:false});
+  const ring = new THREE.Group(); scene.add(ring);
+  const statues = [], hitboxes = [];
+
+  function buildStatue(f,idx){
+    const L = f.look, t = TONES.marble;   // every statue in the same white marble
+    const mat = new THREE.MeshStandardMaterial({color:t.color,map:t.map,metalness:t.metalness,roughness:t.roughness,envMapIntensity:t.env,emissive:0xb87a2a,emissiveIntensity:0});
+    const matDS = mat.clone(); matDS.side = THREE.DoubleSide;
+    const dark = mat.clone(); dark.color.multiplyScalar(.5);
+    const glowMats = [mat,matDS,dark];
+    const g = new THREE.Group();
+    const add = (geo,parent,pos,rot,scl,m)=>{
+      const me = new THREE.Mesh(geo,m||mat);
+      if(pos) me.position.set(pos[0],pos[1],pos[2]);
+      if(rot) me.rotation.set(rot[0],rot[1],rot[2]);
+      if(scl) me.scale.set(scl[0],scl[1],scl[2]);
+      me.castShadow = true; me.receiveShadow = true; parent.add(me); return me;
+    };
+
+    // pedestal: stepped plinth, body, cornice, framed plaque
+    add(new THREE.BoxGeometry(1.34,.08,1.22),g,[0,.04,0],null,null,capMat);
+    add(new THREE.BoxGeometry(1.22,.06,1.1),g,[0,.11,0],null,null,capMat);
+    add(new THREE.BoxGeometry(1.08,.8,.98),g,[0,.54,0],null,null,stoneMat);
+    add(new THREE.BoxGeometry(1.18,.05,1.08),g,[0,.965,0],null,null,capMat);
+    add(new THREE.BoxGeometry(1.3,.07,1.18),g,[0,1.025,0],null,null,capMat);
+    const pl = new THREE.Mesh(new THREE.PlaneGeometry(.94,.35),new THREE.MeshStandardMaterial({map:plaqueTex(f),roughness:.45,metalness:.35}));
+    pl.position.set(0,.55,.492); g.add(pl);
+    const frameMat = new THREE.MeshStandardMaterial({color:0x9c7a45,metalness:.8,roughness:.35});
+    add(new THREE.BoxGeometry(1.0,.025,.02),g,[0,.74,.495],null,null,frameMat);
+    add(new THREE.BoxGeometry(1.0,.025,.02),g,[0,.36,.495],null,null,frameMat);
+    add(new THREE.BoxGeometry(.025,.4,.02),g,[-.49,.55,.495],null,null,frameMat);
+    add(new THREE.BoxGeometry(.025,.4,.02),g,[.49,.55,.495],null,null,frameMat);
+
+    // bust
+    const B = new THREE.Group(); B.position.y = 1.06; g.add(B);
+    const a = .74*(L.chest||1);
+    const surf = torsoSurf(a);
+    add(new THREE.CylinderGeometry(.3,.38,.12,40),B,[0,.06,0]);
+    const Tg = new THREE.Group(); Tg.position.y = .12; B.add(Tg);
+    add(new THREE.SphereGeometry(1,72,36,0,Math.PI*2,0,Math.PI/2),Tg,[0,0,0],null,[a,TB,TC]);
+    const onSurf = (geo,x,y,off,scl,m)=>{
+      const z = surf(x,y)+off, me = add(geo,Tg,[x,y,z],null,scl,m);
+      me.quaternion.setFromUnitVectors(new V3(0,1,0),torsoNormal(a,x,y,z-off));
+      return me;
+    };
+    const button = (x,y)=>onSurf(new THREE.CylinderGeometry(.022,.024,.014,18),x,y,.006);
+
+    if(L.dress==="suit" || L.dress==="coat"){
+      // notched lapels with rolled edges
+      const outer = [[-.15,.6],[-.33,.49],[-.27,.36],[-.33,.32],[-.12,.06]];
+      const inner = [[-.11,.6],[-.12,.5],[-.1,.38],[-.07,.25],[-.02,.1]];
+      [[outer,inner],[mirror(outer),mirror(inner)]].forEach(([A,Bp])=>{
+        add(ribbon(A,Bp,.022,surf),Tg,null,null,null,matDS);
+        add(edgeTube(A,.022,surf,.009),Tg);
+        add(edgeTube(Bp,.022,surf,.007),Tg);
+      });
+      button(0,.03);
+      if(L.dress==="coat") button(0,-.0);
+      if(!L.bowtie && L.dress==="suit"){
+        add(ribbon([[-.028,.57],[-.048,.22],[0,.13]],[[.028,.57],[.048,.22],[0,.13]],.016,surf),Tg,null,null,null,matDS);
+        onSurf(new THREE.SphereGeometry(.045,20,14),0,.575,.012,[1,.7,1.1]);
+      }
+      // shirt collar tips
+      add(ribbon([[-.13,.6],[-.12,.52]],[[-.03,.6],[-.05,.55]],.012,surf,8,3),Tg,null,null,null,matDS);
+      add(ribbon([[.13,.6],[.12,.52]],[[.03,.6],[.05,.55]],.012,surf,8,3),Tg,null,null,null,matDS);
+    }
+    if(L.bowtie){
+      const bz = surf(0,.57)+.03;
+      add(new THREE.SphereGeometry(.07,20,14),Tg,[-.07,.57,bz],[0,0,.25],[1.1,.6,.45]);
+      add(new THREE.SphereGeometry(.07,20,14),Tg,[.07,.57,bz],[0,0,-.25],[1.1,.6,.45]);
+      add(new THREE.SphereGeometry(.03,14,10),Tg,[0,.57,bz+.01]);
+    }
+    if(L.dress==="stambolli"){
+      // high standing collar and a long row of buttons
+      add(new THREE.CylinderGeometry(.158,.17,.11,40,1,true),B,[0,.79,.01],null,null,matDS);
+      add(edgeTube([[0,.6],[0,.0]],.01,surf,.008),Tg);
+      for(let k=0;k<6;k++) button(-.035,.52-k*.09);
+      add(edgeTube([[-.5,.38],[-.28,.47],[-.16,.6]],.01,surf,.012),Tg);
+      add(edgeTube([[.5,.38],[.28,.47],[.16,.6]],.01,surf,.012),Tg);
+    }
+    if(L.dress==="habit"){
+      // Franciscan habit: deep folds and a cowl around the neck
+      [-.46,-.26,.26,.46].forEach(x=>add(edgeTube([[x,.0],[x*.92,.28],[x*.8,.46]],.0,surf,.024),Tg));
+      add(new THREE.TorusGeometry(.22,.075,16,40),B,[0,.76,.0],[Math.PI/2-.18,0,0]);
+    }
+    if(L.dress==="cassock"){
+      // cassock buttons and a bishop's medallion (panagia) on a chain
+      const chain = []; for(let k=0;k<=12;k++){ const s=-1+k/6; chain.push([.17*s, .6-.48*(1-s*s)]); }
+      add(edgeTube(chain,.012,surf,.007),Tg);
+      const md = onSurf(new THREE.CylinderGeometry(.075,.075,.02,32),0,.1,.018);
+      const crossA = new THREE.Mesh(new THREE.BoxGeometry(.016,.012,.09),mat); crossA.position.y=.014; md.add(crossA);
+      const crossB = new THREE.Mesh(new THREE.BoxGeometry(.06,.012,.016),mat); crossB.position.set(0,.014,-.01); md.add(crossB);
+      add(new THREE.TorusGeometry(.16,.03,10,32),B,[0,.79,.01],[Math.PI/2-.1,0,0]);
+    }
+    if(L.dress==="coat" || L.dress==="suit") add(new THREE.TorusGeometry(.15,.028,10,32),B,[0,.78,.01],[Math.PI/2-.15,0,0]);
+
+    // neck
+    add(new THREE.CylinderGeometry(.125,.145,.46,32),B,[0,.95,.01],[-.08,0,0]);
+    add(new THREE.SphereGeometry(.035,14,10),B,[0,.99,.13],null,[1,1.3,1]);
+
+    // head
+    const H = new THREE.Group(); H.position.set(0,1.31,.03); H.scale.set(L.headW||1,1,1); B.add(H);
+    const U = new THREE.Group(); U.scale.set(HEAD_S[0],HEAD_S[1],HEAD_S[2]); H.add(U);
+    add(HEAD_GEO,U);
+    // eyes: eyeball, carved pupil, upper and lower lids
+    [-1,1].forEach(s=>{
+      add(new THREE.SphereGeometry(.036,24,18),H,[s*.1,.042,.262]);
+      add(new THREE.SphereGeometry(.009,10,8),H,[s*.1,.044,.297],null,null,dark);
+      add(new THREE.SphereGeometry(.041,24,12,0,Math.PI*2,0,Math.PI*.42),H,[s*.1,.044,.262],[.95,0,0]);
+      add(new THREE.TorusGeometry(.034,.007,8,20,Math.PI*.9),H,[s*.1,.036,.27],[.3,0,Math.PI+.15]);
+      add(new THREE.SphereGeometry(.035,16,10),H,[s*.1,.112,.292],[0,0,-s*.15],[2.1,.42,.6]);
+      // ears
+      add(new THREE.TorusGeometry(.045,.014,10,24),H,[s*.302,.0,-.02],[0,Math.PI/2,0],[1,1.35,1]);
+      add(new THREE.SphereGeometry(.035,14,10),H,[s*.295,.0,-.02],null,[.45,1.25,.8]);
+    });
+
+    // hair
+    if(L.hair==="full")  add(hairGeometry(1.06,.5,.011,70),U,[0,.03,-.03],[-.5,0,0]);
+    if(L.hair==="swept"){
+      add(hairGeometry(1.06,.48,.01,64),U,[0,.04,-.04],[-.5,0,0]);
+      add(TUFT_GEO,U,[0,.8,.3],[-.5,0,0],[.5,.2,.35]);
+    }
+    if(L.hair==="slick") add(hairGeometry(1.03,.47,.007,90),U,[0,.02,-.03],[-.48,0,0]);
+    if(L.hair==="side"){
+      add(TUFT_GEO,H,[-.27,-.0,-.08],null,[.09,.15,.18]);
+      add(TUFT_GEO,H,[.27,-.0,-.08],null,[.09,.15,.18]);
+      add(TUFT_GEO,H,[0,.02,-.25],null,[.26,.18,.12]);
+    }
+
+    // facial hair
+    if(L.mustache==="small"){
+      add(new THREE.SphereGeometry(.05,20,14),H,[-.055,-.13,.322],[0,0,.3],[1.7,.6,.7]);
+      add(new THREE.SphereGeometry(.05,20,14),H,[.055,-.13,.322],[0,0,-.3],[1.7,.6,.7]);
+    }
+    if(L.mustache==="big"){
+      add(new THREE.SphereGeometry(.06,20,14),H,[-.07,-.135,.318],[0,.15,.35],[2.1,.75,.8]);
+      add(new THREE.SphereGeometry(.06,20,14),H,[.07,-.135,.318],[0,-.15,-.35],[2.1,.75,.8]);
+      add(new THREE.SphereGeometry(.025,12,10),H,[-.17,-.17,.27]);
+      add(new THREE.SphereGeometry(.025,12,10),H,[.17,-.17,.27]);
+    }
+    if(L.beard==="full") add(CURL_GEO,H,[0,-.27,.1],null,[.29,.29,.22]);
+    if(L.beard==="long") add(CURL_GEO,H,[0,-.42,.1],null,[.28,.46,.22]);
+
+    // headwear
+    if(L.hat==="fez"){
+      add(new THREE.CylinderGeometry(.24,.3,.32,40),H,[0,.33,-.02],[-.1,0,0]);
+      add(new THREE.CylinderGeometry(.006,.006,.22,8),H,[0,.42,-.16],[.9,0,0]);
+      add(TUFT_GEO,H,[0,.36,-.26],null,[.04,.07,.04]);
+    }
+    if(L.hat==="kamilavka"){
+      add(new THREE.CylinderGeometry(.31,.29,.44,40),H,[0,.4,-.02]);
+      add(new THREE.CylinderGeometry(.37,.37,.035,40),H,[0,.635,-.02]);
+      add(new THREE.CylinderGeometry(.36,.44,.62,40,1,true,Math.PI/2,Math.PI),H,[0,.32,-.03],null,null,matDS);
+    }
+    if(L.hat==="hood"){
+      add(new THREE.SphereGeometry(.47,48,28,Math.PI*.82,Math.PI*1.36,0,Math.PI*.74),H,[0,.03,-.05],null,null,matDS);
+      add(new THREE.TorusGeometry(.4,.03,10,40,Math.PI*1.1),H,[0,.06,.16],[0,0,-Math.PI*.05]);
+    }
+    if(L.glasses){
+      [-1,1].forEach(s=>{
+        add(new THREE.TorusGeometry(.066,.009,8,32),H,[s*.105,.045,.318]);
+        add(new THREE.BoxGeometry(.009,.009,.15),H,[s*.238,.05,.24],[0,Math.atan2(s*.125,-.12),0]);
+        add(new THREE.BoxGeometry(.009,.009,.185),H,[s*.31,.05,.09],[0,Math.atan2(s*.015,-.18),0]);
+      });
+      add(new THREE.CylinderGeometry(.007,.007,.075,8),H,[0,.058,.326],[0,0,Math.PI/2]);
+    }
+
+    // selection halo + hit box
+    const halo = new THREE.Mesh(new THREE.RingGeometry(.92,1.0,64),new THREE.MeshBasicMaterial({color:0xd8ab52,transparent:true,opacity:0,depthWrite:false}));
+    halo.rotation.x = -Math.PI/2; halo.position.y = .012; g.add(halo);
+    const hit = new THREE.Mesh(new THREE.BoxGeometry(1.4,3.1,1.3),hitMat);
+    hit.position.y = 1.55; hit.userData.idx = idx; g.add(hit); hitboxes.push(hit);
+
+    g.userData = {glowMats,halo,glow:0};
+    return g;
+  }
+  FIGS.forEach((f,i)=>{
+    const s = buildStatue(f,i);
+    const a = i*2*Math.PI/N;
+    s.userData.target = {x:R*Math.sin(a), z:R*Math.cos(a), rot:a};
+    s.visible = false;
+    ring.add(s); statues.push(s);
+  });
+
+  /* ---------- falling October leaves ---------- */
+  const leafTex = canvasTex(128,128,(g)=>{
+    g.fillStyle="#fff";
+    g.beginPath(); g.moveTo(64,6);
+    g.bezierCurveTo(118,30,122,92,64,124); g.bezierCurveTo(6,92,10,30,64,6); g.fill();
+    g.strokeStyle="rgba(0,0,0,.35)"; g.lineWidth=3;
+    g.beginPath(); g.moveTo(64,12); g.lineTo(64,122);
+    for(let k=0;k<4;k++){ const y=34+k*20; g.moveTo(64,y+12); g.lineTo(36,y); g.moveTo(64,y+12); g.lineTo(92,y); }
+    g.stroke();
+  });
+  const LEAF_COLS = [0xd0692a,0xb8451f,0xe3a23c,0x9c3a1c,0xc98a2c];
+  const leafGeo = new THREE.PlaneGeometry(.26,.26);
+  const leaves = [];
+  const LEAVES = reduced ? 24 : 70;
+  for(let i=0;i<LEAVES;i++){
+    const m = new THREE.Mesh(leafGeo,new THREE.MeshLambertMaterial({map:leafTex,color:LEAF_COLS[i%LEAF_COLS.length],side:THREE.DoubleSide,alphaTest:.45}));
+    m.position.set((Math.random()*2-1)*14,Math.random()*12,(Math.random()*2-1)*11-2);
+    m.userData = {sp:.35+Math.random()*.5,ph:Math.random()*6.28,rx:Math.random()*2,ry:Math.random()*2};
+    scene.add(m); leaves.push(m);
+  }
+
+  /* ---------- golden burst from the pages ---------- */
+  const BN = 520;
+  const bGeo = new THREE.BufferGeometry();
+  const bPos = new Float32Array(BN*3), bVel = new Float32Array(BN*3);
+  bGeo.setAttribute("position",new THREE.BufferAttribute(bPos,3));
+  const dotTex = canvasTex(64,64,(g)=>{
+    const gr=g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,"rgba(255,236,190,1)"); gr.addColorStop(.35,"rgba(240,190,90,.7)"); gr.addColorStop(1,"rgba(240,190,90,0)");
+    g.fillStyle=gr; g.fillRect(0,0,64,64);
+  });
+  const bMat = new THREE.PointsMaterial({map:dotTex,size:.16,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,color:0xffd590});
+  const burst = new THREE.Points(bGeo,bMat); burst.frustumCulled = false; scene.add(burst);
+  let burstAge = 99;
+  function fireBurst(){
+    for(let k=0;k<BN;k++){
+      bPos[k*3]=(Math.random()*2-1)*2.6; bPos[k*3+1]=.45; bPos[k*3+2]=(Math.random()*2-1)*1.8;
+      const a=Math.random()*6.28, s=.6+Math.random()*2.2;
+      bVel[k*3]=Math.cos(a)*s; bVel[k*3+1]=2.4+Math.random()*4.2; bVel[k*3+2]=Math.sin(a)*s;
+    }
+    burstAge = 0;
+  }
+
+  /* ---------- camera framing ---------- */
+  let aspect = 1;
+  const startPos = new V3(), startLook = new V3(0,.1,0);
+  const overPos = new V3(), overLook = new V3(0,1.25,0);
+  const litPos = new V3(), litLook = new V3(0,0,.1);
+  const camPos = new V3(), camLook = new V3(), tgtPos = new V3(), tgtLook = new V3();
+  let viewX = 0, viewY = 0;
+  function frame(){
+    const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
+    const d0 = Math.max(7.2, 3.9/(2*tanH*aspect));
+    startPos.set(0, d0*Math.sin(.98), d0*Math.cos(.98));
+    const d1 = Math.min(26, Math.max(14.5, 13.4/(2*tanH*aspect)));
+    overPos.set(0, 1.25 + d1*Math.sin(.42), d1*Math.cos(.42));
+    const d2 = Math.max(8, 6.6/(2*tanH*aspect));
+    litPos.set(0, d2*Math.sin(1.2), d2*Math.cos(1.2));
+  }
+  function focusPose(outPos,outLook){
+    const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
+    const d = Math.max(5.2, 2.6/(2*tanH*aspect));
+    outPos.set(0, 2.45 + d*.12, R + d);
+    outLook.set(0, 2.15, R);
+  }
+  function resize(){
+    const w = innerWidth, h = innerHeight;
+    renderer.setSize(w,h,false);
+    aspect = w/h; camera.aspect = aspect; camera.updateProjectionMatrix();
+    frame();
+    if(phase==="closed"){ camPos.copy(startPos); camLook.copy(startLook); }
+  }
+  addEventListener("resize",resize); resize();
+  camPos.copy(startPos); camLook.copy(startLook);
+
+  /* ---------- opening / closing timeline ---------- */
+  function applyTimeline(t){
+    const kc = ease(seg(t,.15,1.7));
+    coverPivot.rotation.z = Math.PI*kc;
+    book.position.x = -W/2*(1-kc);
+    pages.forEach((p,i)=>{ p.rotation.z = Math.PI*ease(seg(t,.95+i*.2,1.95+i*.2)); });
+    leftBlock.scale.y = .02 + .98*ease(seg(t,.95,3.0));
+    leftBlock.visible = t>.9;
+    const kcam = ease(seg(t,2.1,5.3));
+    tgtPos.lerpVectors(startPos,overPos,kcam);
+    tgtLook.lerpVectors(startLook,overLook,kcam);
+    bookGlow.intensity = t<2.4 ? 0 : (t<3.2 ? 3.2*seg(t,2.4,3.2) : 3.2 - 2.6*seg(t,3.2,5.8));
+    ringLine.material.opacity = .22*seg(t,4.2,5.8);
+    if(t>=2.45 && !burstFired){ burstFired = true; fireBurst(); }
+    statues.forEach((s,i)=>{
+      const k = ease(seg(t,2.85+i*.13,4.55+i*.13));
+      const tg = s.userData.target;
+      s.visible = k>.001;
+      s.position.set(tg.x*k, -.3*(1-k) + Math.sin(k*Math.PI)*2.3, tg.z*k);
+      s.scale.setScalar(.06+.94*k);
+      s.rotation.y = tg.rot + (1-k)*Math.PI*2;
+    });
+  }
+  function startOpening(){
+    if(phase!=="closed") return;
+    closePanel(); showReadyUI(false);
+    $("#intro").classList.add("gone");
+    $("#skipBtn").hidden = false;
+    ringRot = 0; ringVel = 0; burstFired = false;
+    camPos.copy(startPos); camLook.copy(startLook);
+    phase = "opening"; tOpen = performance.now()/1000;
+  }
+  function finishOpening(){
+    applyTimeline(END);
+    phase = "ready";
+    $("#skipBtn").hidden = true;
+    showReadyUI(true);
+  }
+  closeBook = ()=>{
+    if(phase!=="ready") return;
+    closeLit(); closePanel(); showReadyUI(false);
+    hovered = -1; canvas.classList.remove("pointer");
+    burstFired = true;
+    phase = "closing"; tClose = performance.now()/1000;
+  };
+  function finishClosing(){
+    applyTimeline(0);
+    statues.forEach(s=>s.visible=false);
+    phase = "closed";
+    $("#intro").classList.remove("gone");
+  }
+  applyTimeline(0);
+  $("#openBtn").onclick = startOpening;
+  $("#skipBtn").onclick = ()=>{ tOpen = performance.now()/1000 - END/SPEED; };
+
+  /* ---------- pointer: drag to turn, click to pick ---------- */
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  const canvas = $("#stage");
+  let down = null, dragging = false, lastX = 0, lastT = 0;
+  function pick(e){
+    const r = canvas.getBoundingClientRect();
+    ndc.set(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1);
+    ray.setFromCamera(ndc,camera);
+    const hit = ray.intersectObjects(hitboxes,false)[0];
+    return hit ? hit.object.userData.idx : -1;
+  }
+  canvas.addEventListener("pointerdown",e=>{
+    down = {x:e.clientX,y:e.clientY}; dragging = false; lastX = e.clientX; lastT = performance.now();
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener("pointermove",e=>{
+    if(down && phase==="ready"){
+      if(!dragging && Math.abs(e.clientX-down.x)>6){ dragging = true; canvas.classList.add("dragging"); if(selected>=0) closePanel(); }
+      if(dragging){
+        const now = performance.now(), dx = e.clientX-lastX;
+        ringRot += dx*.0065;
+        ringVel = dx*.0065/Math.max(.008,(now-lastT)/1000);
+        lastX = e.clientX; lastT = now;
+      }
+      return;
+    }
+    if(phase==="ready" && e.pointerType==="mouse"){
+      hovered = pick(e);
+      canvas.classList.toggle("pointer",hovered>=0);
+    }
+  });
+  function endPointer(e){
+    if(!down) return;
+    const wasDrag = dragging;
+    down = null; dragging = false; canvas.classList.remove("dragging");
+    if(wasDrag) return;
+    if(phase==="closed"){ startOpening(); return; }
+    if(phase==="ready"){
+      const i = pick(e);
+      if(i>=0) (i===selected ? closePanel() : select(i));
+      else if(selected>=0) closePanel();
+    }
+  }
+  canvas.addEventListener("pointerup",endPointer);
+  canvas.addEventListener("pointercancel",()=>{ down=null; dragging=false; canvas.classList.remove("dragging"); });
+  canvas.addEventListener("pointerleave",()=>{ if(!down){ hovered=-1; canvas.classList.remove("pointer"); } });
+  canvas.addEventListener("keydown",e=>{ if(phase==="closed" && (e.key==="Enter"||e.key===" ")){ e.preventDefault(); startOpening(); } });
+
+  /* ---------- loop ---------- */
+  let last = performance.now();
+  const panelEl = $("#panel");
+  function tick(nowMs){
+    const dt = Math.min(.05,(nowMs-last)/1000); last = nowMs;
+    const now = nowMs/1000;
+
+    if(phase==="opening"){
+      const t = (now - tOpen)*SPEED;
+      if(t>=END) finishOpening(); else { applyTimeline(t); camPos.copy(tgtPos); camLook.copy(tgtLook); }
+    }else if(phase==="closing"){
+      const t = END - (now - tClose)*SPEED*1.5;
+      applyTimeline(Math.max(0,t));
+      const k = 1-Math.exp(-5*dt);
+      camPos.lerp(tgtPos,k); camLook.lerp(tgtLook,k);
+      if(t<=0) finishClosing();
+    }else if(phase==="ready"){
+      if(litOpen){
+        tgtPos.copy(litPos); tgtLook.copy(litLook);
+      }else if(selected>=0){
+        ringRot = damp(ringRot,ringTarget,4.2,dt);
+        focusPose(tgtPos,tgtLook);
+      }else{
+        if(!dragging){
+          ringRot += ringVel*dt; ringVel *= Math.exp(-3.2*dt);
+          if(hovered<0 && !reduced) ringRot += .07*dt;
+        }
+        tgtPos.copy(overPos); tgtLook.copy(overLook);
+      }
+      const k = 1-Math.exp(-2.6*dt);
+      camPos.lerp(tgtPos,k); camLook.lerp(tgtLook,k);
+      bookGlow.intensity = damp(bookGlow.intensity, selected>=0 ? .3 : (litOpen ? 1.4 : .6), 2, dt);
+    }else{
+      // closed: a slow drift while waiting
+      camPos.copy(startPos).add(tgtPos.set(Math.sin(now*.4)*.25,0,0));
+      camLook.copy(startLook);
+    }
+    ring.rotation.y = ringRot;
+
+    // keep the selected statue clear of the reading panel
+    let tx = 0, ty = 0;
+    if(selected>=0){
+      if(innerWidth>=760) tx = Math.min(440,innerWidth)/2;
+      else ty = panelEl.offsetHeight*.36;
+    }
+    viewX = damp(viewX,tx,4,dt); viewY = damp(viewY,ty,4,dt);
+    camera.setViewOffset(innerWidth,innerHeight,viewX,viewY,innerWidth,innerHeight);
+
+    camera.position.copy(camPos); camera.lookAt(camLook);
+
+    statues.forEach((s,i)=>{
+      const u = s.userData;
+      const target = i===selected ? 1 : (i===hovered ? .55 : 0);
+      u.glow = damp(u.glow,target,6,dt);
+      u.glowMats.forEach(m=>m.emissiveIntensity = u.glow*.32);
+      u.halo.material.opacity = u.glow*.85;
+    });
+
+    if(burstAge<6){
+      burstAge += dt;
+      for(let k=0;k<BN;k++){
+        bVel[k*3+1] -= 1.5*dt;
+        bPos[k*3] += bVel[k*3]*dt; bPos[k*3+1] += bVel[k*3+1]*dt; bPos[k*3+2] += bVel[k*3+2]*dt;
+      }
+      bGeo.attributes.position.needsUpdate = true;
+      bMat.opacity = burstAge<.25 ? burstAge*4 : Math.max(0,1-(burstAge-.25)/3.2);
+    }
+
+    leaves.forEach(l=>{
+      const u = l.userData;
+      l.position.y -= u.sp*dt;
+      l.position.x += Math.sin(now*.8+u.ph)*.35*dt + .08*dt;
+      l.rotation.x = now*u.rx + u.ph; l.rotation.y = now*u.ry;
+      if(l.position.y < -.2){ l.position.y = 11 + Math.random()*2; l.position.x = (Math.random()*2-1)*14; }
+    });
+
+    renderer.render(scene,camera);
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+</script>
+
+</body></html>
